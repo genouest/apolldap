@@ -1,3 +1,5 @@
+[![Docker Repository on Quay](https://quay.io/repository/genouest/apolldap/status "Docker Repository on Quay")](https://quay.io/repository/genouest/apolldap)
+
 # Apolldap
 
 A Docker image allowing to synchronize users and groups from an ldap server into an [Apollo](https://github.com/GMOD/apollo) instance.
