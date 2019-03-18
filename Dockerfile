@@ -18,7 +18,7 @@ RUN apk add --no-cache \
     rm -r /root/.cache
 
 WORKDIR /var/scripts
-ADD apolldap.py .
+ADD ldapollo.py .
 
 ENV LDAP_ENABLED=1 \
     REPEAT_TIMER=3600 \
@@ -30,4 +30,4 @@ ENV LDAP_ENABLED=1 \
     LDAP_GROUP_DN="ou=Groups,dc=default,dc=org" \
     MAIL_SUFFIX="@default"
 
-ENTRYPOINT watch -n $REPEAT_TIMER python /var/scripts/apolldap.py
+ENTRYPOINT watch -n $REPEAT_TIMER python /var/scripts/ldapollo.py
