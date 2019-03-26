@@ -8,7 +8,7 @@ RUN apk add --no-cache \
     bash \
     nano \
     ca-certificates \
-    wget man man-pages && \
+    wget man man-pages libldap && \
     python3 -m ensurepip && \
     rm -r /usr/lib/python*/ensurepip && \
     pip3 install --upgrade pip setuptools && \
@@ -30,4 +30,4 @@ ENV LDAP_ENABLED=1 \
     LDAP_GROUP_DN="ou=Groups,dc=default,dc=org" \
     MAIL_SUFFIX="@default"
 
-ENTRYPOINT watch -n $REPEAT_TIMER python /var/scripts/ldapollo.py
+CMD watch -n $REPEAT_TIMER python3 /var/scripts/ldapollo.py
