@@ -1,18 +1,16 @@
 from __future__ import print_function
 
 import os
+import random
+import re
+import string
 import sys
+
+from apollo import ApolloInstance
 
 import ldap
 
-import requests
-
-base_apollo_url = os.environ['APOLLO_URL']
-
-apollo_auth = {
-    'username': os.environ['APOLLO_ADMIN'],
-    'password': os.environ['APOLLO_PASSWORD']
-}
+wa = ApolloInstance(os.environ['APOLLO_URL'], os.environ['APOLLO_ADMIN'], os.environ['APOLLO_PASSWORD'])
 
 ldap_conf = {
     'url': os.environ['LDAP_URL'],
@@ -24,60 +22,59 @@ mail_suffix = os.environ['MAIL_SUFFIX']
 
 
 def apollo_get_users():
-    r = requests.post(base_apollo_url + '/user/loadUsers', json=apollo_auth)
+    users = wa.users.get_users()
     users_mail = []
-    users = r.json()
     for user in users:
         users_mail.append(user['username'].split("@")[0])
     return users_mail
 
 
 def apollo_get_groups():
-    r = requests.post(base_apollo_url + '/group/loadGroups', json=apollo_auth)
-    groups = r.json()
+    groups = wa.groups.get_groups()
     group_list = {}
     for group in groups:
-        print(group)
         group_list[group['name']] = group['id']
     return group_list
 
 
 def apollo_create_groups(groups_name_list, apollo_existing_groups):
     for group in groups_name_list:
-        body = apollo_auth
-        body['name'] = groups_name_list[group]
-        r = requests.post(base_apollo_url + '/group/createGroup', json=body)
-        res = r.json()
-        apollo_existing_groups[group] = res['id']
+        print("Creating group '%s'" % group)
+        created = wa.groups.create_group(group)
+        apollo_existing_groups[group] = created['id']
+
     return apollo_existing_groups
 
 
 def apollo_update_groups(groups_membership, id_table):
     for group in groups_membership:
-        body = apollo_auth
-        body['users'] = groups_membership[group]
-        body['groupId'] = id_table[group]
-        r = requests.post(base_apollo_url + '/group/updateMembership', json=body)
-        if r.status_code != 200:
-            print(r)
+        print("Updating group membership for group '%s', %s members" % (group, len(groups_membership[group])))
+        wa.groups.update_membership(id_table[group], groups_membership[group])
 
 
-def ldap_get_users(apollo_user_list):
+def apollo_create_users(users_name_list):
+    for user in users_name_list:
+        print("Creating user '%s'" % user)
+        random_pass = ''.join(random.choice(string.ascii_lowercase) for x in range(32))
+        wa.users.create_user(email=user + mail_suffix, first_name="REMOTE_USER", last_name=user + mail_suffix, role="user", metadata={"INTERNAL_PASSWORD": random_pass}, password=random_pass)
+
+
+def ldap_get_users(restrict=None):
     con = ldap.initialize(ldap_conf['url'])
     con.simple_bind_s()
     ldap_users = con.search_s(ldap_conf['people_dn'], ldap.SCOPE_SUBTREE, '(mail=*)', ['uid', 'mail', 'cn'])
     users = {}
     for u in ldap_users:
         # If user is not in apollo, ignore it
-        if u[1]['uid'][0] in apollo_user_list:
-            users[u[1]['uid'][0]] = u[1]['uid'][0] + mail_suffix
+        if restrict is None or u[1]['uid'][0] in restrict:
+            users[u[1]['uid'][0].decode("utf-8")] = u[1]['uid'][0].decode("utf-8") + mail_suffix
     return users
 
 
 def ldap_get_groups(user_list):
     con = ldap.initialize(ldap_conf['url'])
     con.simple_bind_s()
-    ldap_groups = con.search_s(ldap_conf['group_dn'], ldap.SCOPE_SUBTREE, "cn=*", ['cn', 'memberUid'])
+    ldap_groups = con.search_s(ldap_conf['group_dn'], ldap.SCOPE_SUBTREE, "cn=*", ['cn', 'memberUid', 'member'])
     groups = {}
 
     for g in ldap_groups:
@@ -86,18 +83,34 @@ def ldap_get_groups(user_list):
             for member in g[1]['memberUid']:
                 if member in user_list:
                     members.append(user_list[member])
-        groups[g[1]['cn'][0]] = members
+        if 'member' in g[1]:
+            for member in g[1]['member']:
+                uid_search = re.search('(?<=uid=)([^,]+)', member.decode("utf-8"))
+                if uid_search:
+                    uid = uid_search.group(1)
+                    if uid in user_list:
+                        members.append(user_list[uid])
+        groups[g[1]['cn'][0].decode("utf-8")] = members
 
     return groups
 
 
 def filter_groups(apollo_groups, ldap_groups):
-    # Return list of missing groups in Apollo. What to do with missing groups in ldap? Remove from apollo?
+    # Return list of missing groups in Apollo.
     missing_groups = []
     for ldap_group in ldap_groups:
         if ldap_group not in apollo_groups:
             missing_groups.append(ldap_group)
     return missing_groups
+
+
+def filter_users(apollo_users, ldap_users):
+    # Return list of missing users in Apollo.
+    missing_users = []
+    for ldap_user in ldap_users:
+        if ldap_user not in apollo_users:
+            missing_users.append(ldap_user)
+    return missing_users
 
 
 def is_ldap_enabled():
@@ -110,20 +123,40 @@ def is_ldap_enabled():
         return False
 
 
+def should_create_users():
+    if 'CREATE_USERS' not in os.environ:
+        return False
+    value = os.environ['CREATE_USERS']
+    if value.lower() in ('true', 't', '1'):
+        return True
+    else:
+        return False
+
+
 def main():
 
     if not is_ldap_enabled():
         sys.exit(0)
 
-    apollo_user_list = apollo_get_users()
+    apollo_users = apollo_get_users()
     apollo_groups = apollo_get_groups()
 
-    user_list = ldap_get_users(apollo_user_list)
-    ldap_groups = ldap_get_groups(user_list)
+    if should_create_users():
+        # Create missing users
+        print("Will create missing Apollo users")
+        ldap_users = ldap_get_users()
+        ldap_groups = ldap_get_groups(ldap_users)
 
-    missing_apollo_groups = filter_groups(apollo_groups, ldap_groups)
+        missing_apollo_users = filter_users(apollo_users, ldap_users)
+        apollo_create_users(missing_apollo_users)
+    else:
+        # Only sync users already existing in Apollo
+        print("Will NOT create missing Apollo users")
+        apollo_and_ldap_users = ldap_get_users(apollo_users)
+        ldap_groups = ldap_get_groups(apollo_and_ldap_users)
 
     # Create missing groups
+    missing_apollo_groups = filter_groups(apollo_groups, ldap_groups)
     apollo_groups = apollo_create_groups(missing_apollo_groups, apollo_groups)
 
     # Populate groups

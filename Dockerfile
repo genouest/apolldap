@@ -28,6 +28,7 @@ ENV LDAP_ENABLED=1 \
     LDAP_URL="ldap://ldap" \
     LDAP_USER_DN="ou=People,dc=default,dc=org" \
     LDAP_GROUP_DN="ou=Groups,dc=default,dc=org" \
-    MAIL_SUFFIX="@default"
+    MAIL_SUFFIX="@default" \
+    CREATE_USERS=1
 
 CMD watch -n $REPEAT_TIMER python3 /var/scripts/ldapollo.py
