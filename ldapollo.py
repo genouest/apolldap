@@ -5,6 +5,7 @@ import random
 import re
 import string
 import sys
+import time
 
 from apollo import ApolloInstance
 
@@ -38,18 +39,19 @@ def apollo_get_groups():
 
 
 def apollo_create_groups(groups_name_list, apollo_existing_groups):
-    for group in groups_name_list:
-        print("Creating group '%s'" % group)
-        created = wa.groups.create_group(group)
-        apollo_existing_groups[group] = created['id']
+    group_list = ','.join(groups_name_list)
+    print("Creating groups '%s'" % group_list)
+    created = wa.groups.create_group(group_list)
 
-    return apollo_existing_groups
+    return {x['name']: x['id'] for x in created}
 
 
 def apollo_update_groups(groups_membership, id_table):
+    memberships = []
     for group in groups_membership:
-        print("Updating group membership for group '%s', %s members" % (group, len(groups_membership[group])))
-        wa.groups.update_membership(id_table[group], groups_membership[group])
+        memberships.append({'groupId': id_table[group], 'users': groups_membership[group]})
+    print("Updating group membership: '%s'" % (memberships))
+    return wa.groups.update_membership(memberships=memberships)
 
 
 def apollo_create_users(users_name_list):
@@ -133,10 +135,21 @@ def should_create_users():
         return False
 
 
+def clean_all():
+    for u in wa.users.get_users():
+        if u['username'] not in ('admin@bipaa', 'abretaud@bipaa'):
+            print("Deleting user %s" % u['username'])
+            wa.users.delete_user(u['username'])
+    print("Deleting groups %s" % ','.join([x['name'] for x in wa.groups.get_groups()]))
+    wa.groups.delete_group(','.join([x['name'] for x in wa.groups.get_groups()]))
+
+
 def main():
 
     if not is_ldap_enabled():
         sys.exit(0)
+
+    clean_all()
 
     apollo_users = apollo_get_users()
     apollo_groups = apollo_get_groups()
@@ -158,6 +171,9 @@ def main():
     # Create missing groups
     missing_apollo_groups = filter_groups(apollo_groups, ldap_groups)
     apollo_groups = apollo_create_groups(missing_apollo_groups, apollo_groups)
+
+    # To avoid java.util.ConcurrentModificationException
+    time.sleep(3)
 
     # Populate groups
     apollo_update_groups(ldap_groups, apollo_groups)
