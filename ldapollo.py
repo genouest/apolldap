@@ -90,14 +90,14 @@ def ldap_get_groups(user_list):
             for member in g[1]['memberUid']:
                 member = member.decode("utf-8")
                 if member in user_list:
-                    members.append(user_list[member]['apollo_name'])
+                    members.append(user_list[member]['mail'])
         if 'member' in g[1]:
             for member in g[1]['member']:
                 uid_search = re.search('(?<=uid=)([^,]+)', member.decode("utf-8"))
                 if uid_search:
                     uid = uid_search.group(1)
                     if uid in user_list:
-                        members.append(user_list[uid]['apollo_name'])
+                        members.append(user_list[uid]['mail'])
         groups[g[1]['cn'][0].decode("utf-8")] = members
 
     return groups
