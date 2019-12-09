@@ -59,9 +59,9 @@ def apollo_update_groups(groups_membership, id_table):
 
 def apollo_create_users(users_name_list):
     for user in users_name_list:
-        print("Creating user '%s'" % (users_name_list['apollo_name']))
+        print("Creating user '%s'" % (users_name_list[user]['apollo_name']))
         random_pass = ''.join(random.choice(string.ascii_lowercase) for x in range(32))
-        wa.users.create_user(email=users_name_list['mail'], first_name="REMOTE_USER", last_name=users_name_list['apollo_name'], role="user", metadata={"INTERNAL_PASSWORD": random_pass}, password=random_pass)
+        wa.users.create_user(email=users_name_list[user]['mail'], first_name="REMOTE_USER", last_name=users_name_list[user]['apollo_name'], role="user", metadata={"INTERNAL_PASSWORD": random_pass}, password=random_pass)
 
 
 def ldap_get_users(restrict=None):
