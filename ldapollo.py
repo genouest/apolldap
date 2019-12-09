@@ -50,7 +50,7 @@ def apollo_create_groups(groups_name_list, apollo_existing_groups):
 def apollo_update_groups(groups_membership, id_table):
     memberships = []
     for group in groups_membership:
-        memberships.append({'groupId': id_table[group], 'users': groups_membership[group]})
+        memberships = [{'groupId': id_table[group], 'users': groups_membership[group]}]
         print("Updating group membership: '%s'" % (memberships))
         wa.groups.update_membership(memberships=memberships)
 
