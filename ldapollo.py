@@ -51,8 +51,8 @@ def apollo_update_groups(groups_membership, id_table):
     memberships = []
     for group in groups_membership:
         memberships.append({'groupId': id_table[group], 'users': groups_membership[group]})
-    print("Updating group membership: '%s'" % (memberships))
-    return wa.groups.update_membership(memberships=memberships)
+        print("Updating group membership: '%s'" % (memberships))
+        wa.groups.update_membership(memberships=memberships)
 
 
 def apollo_create_users(users_name_list):
@@ -69,8 +69,9 @@ def ldap_get_users(restrict=None):
     users = {}
     for u in ldap_users:
         # If user is not in apollo, ignore it
-        if restrict is None or u[1]['uid'][0] in restrict:
-            users[u[1]['uid'][0].decode("utf-8")] = u[1]['uid'][0].decode("utf-8") + mail_suffix
+        ldap_name = u[1]['uid'][0].decode("utf-8")
+        if restrict is None or (ldap_name + mail_suffix) in restrict:
+            users[ldap_name] = ldap_name + mail_suffix
     return users
 
 
