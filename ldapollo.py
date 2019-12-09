@@ -59,9 +59,9 @@ def apollo_update_groups(groups_membership, id_table):
 
 def apollo_create_users(users_name_list):
     for user in users_name_list:
-        print("Creating user '%s'" % (user + mail_suffix))
+        print("Creating user '%s'" % (users_name_list['apollo_name']))
         random_pass = ''.join(random.choice(string.ascii_lowercase) for x in range(32))
-        wa.users.create_user(email=user + mail_suffix, first_name="REMOTE_USER", last_name=user + mail_suffix, role="user", metadata={"INTERNAL_PASSWORD": random_pass}, password=random_pass)
+        wa.users.create_user(email=users_name_list['mail'], first_name="REMOTE_USER", last_name=users_name_list['apollo_name'], role="user", metadata={"INTERNAL_PASSWORD": random_pass}, password=random_pass)
 
 
 def ldap_get_users(restrict=None):
@@ -72,8 +72,9 @@ def ldap_get_users(restrict=None):
     for u in ldap_users:
         # If user is not in apollo, ignore it
         ldap_name = u[1]['uid'][0].decode("utf-8")
+        ldap_mail = u[1]['mail'][0].decode("utf-8")
         if restrict is None or (ldap_name + mail_suffix) in restrict:
-            users[ldap_name] = ldap_name + mail_suffix
+            users[ldap_name] = {'apollo_name': ldap_name + mail_suffix, 'mail': ldap_mail}
     return users
 
 
@@ -89,14 +90,14 @@ def ldap_get_groups(user_list):
             for member in g[1]['memberUid']:
                 member = member.decode("utf-8")
                 if member in user_list:
-                    members.append(user_list[member])
+                    members.append(user_list[member]['apollo_name'])
         if 'member' in g[1]:
             for member in g[1]['member']:
                 uid_search = re.search('(?<=uid=)([^,]+)', member.decode("utf-8"))
                 if uid_search:
                     uid = uid_search.group(1)
                     if uid in user_list:
-                        members.append(user_list[uid])
+                        members.append(user_list[uid]['apollo_name'])
         groups[g[1]['cn'][0].decode("utf-8")] = members
 
     return groups
@@ -113,10 +114,10 @@ def filter_groups(apollo_groups, ldap_groups):
 
 def filter_users(apollo_users, ldap_users):
     # Return list of missing users in Apollo.
-    missing_users = []
+    missing_users = {}
     for ldap_user in ldap_users:
         if ldap_user not in apollo_users:
-            missing_users.append(ldap_user)
+            missing_users[ldap_user] = ldap_users[ldap_user]
     return missing_users
 
 
