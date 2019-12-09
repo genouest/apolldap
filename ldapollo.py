@@ -57,7 +57,7 @@ def apollo_update_groups(groups_membership, id_table):
 
 def apollo_create_users(users_name_list):
     for user in users_name_list:
-        print("Creating user '%s'" % user)
+        print("Creating user '%s'" % (user + mail_suffix))
         random_pass = ''.join(random.choice(string.ascii_lowercase) for x in range(32))
         wa.users.create_user(email=user + mail_suffix, first_name="REMOTE_USER", last_name=user + mail_suffix, role="user", metadata={"INTERNAL_PASSWORD": random_pass}, password=random_pass)
 
@@ -150,7 +150,8 @@ def main():
     if not is_ldap_enabled():
         sys.exit(0)
 
-    clean_all()
+    # For debuging only
+    # clean_all()
 
     apollo_users = apollo_get_users()
     apollo_groups = apollo_get_groups()
