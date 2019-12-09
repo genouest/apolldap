@@ -40,18 +40,20 @@ def apollo_get_groups():
 
 
 def apollo_create_groups(groups_name_list, apollo_existing_groups):
-    group_list = ','.join(groups_name_list)
-    print("Creating groups '%s'" % group_list)
-    created = wa.groups.create_group(group_list)
+    if groups_name_list:
+        group_list = ','.join(groups_name_list)
+        print("Creating groups '%s'" % group_list)
+        created = wa.groups.create_group(group_list)
 
-    return {x['name']: x['id'] for x in created}
+        return {x['name']: x['id'] for x in created}
+    else:
+        return {}
 
 
 def apollo_update_groups(groups_membership, id_table):
-    memberships = []
     for group in groups_membership:
+        print("Updating group membership: '%s' -> '%s'" % (group, groups_membership[group]))
         memberships = [{'groupId': id_table[group], 'users': groups_membership[group]}]
-        print("Updating group membership: '%s'" % (memberships))
         wa.groups.update_membership(memberships=memberships)
 
 
@@ -85,6 +87,7 @@ def ldap_get_groups(user_list):
         members = []
         if 'memberUid' in g[1]:
             for member in g[1]['memberUid']:
+                member = member.decode("utf-8")
                 if member in user_list:
                     members.append(user_list[member])
         if 'member' in g[1]:
@@ -173,7 +176,9 @@ def main():
 
     # Create missing groups
     missing_apollo_groups = filter_groups(apollo_groups, ldap_groups)
-    apollo_groups = apollo_create_groups(missing_apollo_groups, apollo_groups)
+    new_groups = apollo_create_groups(missing_apollo_groups, apollo_groups)
+    for ng in new_groups:
+        apollo_groups[ng] = new_groups[ng]
 
     # To avoid java.util.ConcurrentModificationException
     time.sleep(3)
