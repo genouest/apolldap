@@ -12,6 +12,7 @@ from apollo import ApolloInstance
 import ldap
 
 wa = ApolloInstance(os.environ['APOLLO_URL'], os.environ['APOLLO_ADMIN'], os.environ['APOLLO_PASSWORD'])
+admin_users = [os.environ['APOLLO_ADMIN']]
 
 ldap_conf = {
     'url': os.environ['LDAP_URL'],
@@ -137,7 +138,7 @@ def should_create_users():
 
 def clean_all():
     for u in wa.users.get_users():
-        if u['username'] not in ('admin@bipaa', 'abretaud@bipaa'):
+        if u['username'] not in admin_users:
             print("Deleting user %s" % u['username'])
             wa.users.delete_user(u['username'])
     print("Deleting groups %s" % ','.join([x['name'] for x in wa.groups.get_groups()]))
