@@ -16,6 +16,5 @@ APOLLO_PASSWORD="password"                  # Apollo admin user password
 LDAP_URL="ldap://ldap"                      # Connection url for the LDAP server
 LDAP_USER_DN="ou=People,dc=default,dc=org"  # DN for users in the LDAP server
 LDAP_GROUP_DN="ou=Groups,dc=default,dc=org" # DN for groups in the LDAP server
-MAIL_SUFFIX="@default"                      # Suffix appended to uid to produce Apollo usernames
 CREATE_USERS=1                              # Set this to 0 if you don't want all ldap users to be created in Apollo
 ```

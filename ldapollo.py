@@ -20,14 +20,12 @@ ldap_conf = {
     'group_dn': os.environ['LDAP_GROUP_DN']
 }
 
-mail_suffix = os.environ['MAIL_SUFFIX']
-
 
 def apollo_get_users():
     users = wa.users.get_users()
     users_mail = []
     for user in users:
-        users_mail.append(user['username'].split("@")[0])
+        users_mail.append(user['lastName'])
     return users_mail
 
 
@@ -73,8 +71,8 @@ def ldap_get_users(restrict=None):
         # If user is not in apollo, ignore it
         ldap_name = u[1]['uid'][0].decode("utf-8")
         ldap_mail = u[1]['mail'][0].decode("utf-8")
-        if restrict is None or (ldap_name + mail_suffix) in restrict:
-            users[ldap_name] = {'apollo_name': ldap_name + mail_suffix, 'mail': ldap_mail}
+        if restrict is None or ldap_name in restrict:
+            users[ldap_name] = {'apollo_name': ldap_name, 'mail': ldap_mail}
     return users
 
 
