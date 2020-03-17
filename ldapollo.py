@@ -14,6 +14,8 @@ import ldap
 wa = ApolloInstance(os.environ['APOLLO_URL'], os.environ['APOLLO_ADMIN'], os.environ['APOLLO_PASSWORD'])
 admin_users = [os.environ['APOLLO_ADMIN']]
 
+fake_email = os.environ['FAKE_EMAIL']
+
 ldap_conf = {
     'url': os.environ['LDAP_URL'],
     'people_dn': os.environ['LDAP_USER_DN'],
@@ -69,8 +71,12 @@ def ldap_get_users(restrict=None):
     users = {}
     for u in ldap_users:
         # If user is not in apollo, ignore it
-        ldap_name = u[1]['uid'][0].decode("utf-8")
-        ldap_mail = u[1]['mail'][0].decode("utf-8")
+        if fake_email and fake_email.startswith('@'):
+            ldap_name = u[1]['uid'][0].decode("utf-8") + fake_email
+            ldap_mail = ldap_name + fake_email
+        else:
+            ldap_name = u[1]['uid'][0].decode("utf-8")
+            ldap_mail = u[1]['mail'][0].decode("utf-8")
         if restrict is None or ldap_name in restrict:
             users[ldap_name] = {'apollo_name': ldap_name, 'mail': ldap_mail}
     return users
