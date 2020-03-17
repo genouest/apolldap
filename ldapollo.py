@@ -73,7 +73,7 @@ def ldap_get_users(restrict=None):
         # If user is not in apollo, ignore it
         if fake_email and fake_email.startswith('@'):
             ldap_name = u[1]['uid'][0].decode("utf-8") + fake_email
-            ldap_mail = ldap_name + fake_email
+            ldap_mail = ldap_name
         else:
             ldap_name = u[1]['uid'][0].decode("utf-8")
             ldap_mail = u[1]['mail'][0].decode("utf-8")
