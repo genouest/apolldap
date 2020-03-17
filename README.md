@@ -20,4 +20,6 @@ LDAP_USER_DN="ou=People,dc=default,dc=org"  # DN for users in the LDAP server
 LDAP_GROUP_DN="ou=Groups,dc=default,dc=org" # DN for groups in the LDAP server
 CREATE_USERS=1                              # Set this to 0 if you don't want all ldap users to be created in Apollo
 FAKE_EMAIL=""                               # If you want users to be registered with a fake email rather than the mail in ldap, write the suffix to use (e.g.: "@example.org")
+LDAP_USER_FILTER="(mail=*)"                 # LDAP filter string for retrieving user list
+LDAP_GROUP_FILTER="(cn=*)"                  # LDAP filter string for retrieving group list
 ```

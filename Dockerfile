@@ -29,6 +29,8 @@ ENV LDAP_ENABLED=1 \
     LDAP_USER_DN="ou=People,dc=default,dc=org" \
     LDAP_GROUP_DN="ou=Groups,dc=default,dc=org" \
     CREATE_USERS=1 \
-    FAKE_EMAIL=""
+    FAKE_EMAIL="" \
+    LDAP_USER_FILTER="(mail=*)" \
+    LDAP_GROUP_FILTER="(cn=*)"
 
 CMD watch -n $REPEAT_TIMER python3 /var/scripts/ldapollo.py

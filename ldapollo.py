@@ -17,6 +17,15 @@ admin_users = [os.environ['APOLLO_ADMIN']]
 fake_email = os.environ['FAKE_EMAIL']
 use_fake_email = fake_email and fake_email.startswith('@')
 
+ldap_user_filter = '(mail=*)'
+if 'LDAP_USER_FILTER' in os.environ and os.environ['LDAP_USER_FILTER']:
+    ldap_user_filter = os.environ['LDAP_USER_FILTER']
+
+ldap_group_filter = "(cn=*)"
+if 'LDAP_GROUP_FILTER' in os.environ and os.environ['LDAP_GROUP_FILTER']:
+    ldap_group_filter = os.environ['LDAP_GROUP_FILTER']
+
+
 ldap_conf = {
     'url': os.environ['LDAP_URL'],
     'people_dn': os.environ['LDAP_USER_DN'],
@@ -68,7 +77,7 @@ def apollo_create_users(users_name_list):
 def ldap_get_users(restrict=None):
     con = ldap.initialize(ldap_conf['url'])
     con.simple_bind_s()
-    ldap_users = con.search_s(ldap_conf['people_dn'], ldap.SCOPE_SUBTREE, '(mail=*)', ['uid', 'mail', 'cn'])
+    ldap_users = con.search_s(ldap_conf['people_dn'], ldap.SCOPE_SUBTREE, ldap_user_filter, ['uid', 'mail', 'cn'])
     users = {}
     for u in ldap_users:
         # If user is not in apollo, ignore it
@@ -86,7 +95,7 @@ def ldap_get_users(restrict=None):
 def ldap_get_groups(user_list):
     con = ldap.initialize(ldap_conf['url'])
     con.simple_bind_s()
-    ldap_groups = con.search_s(ldap_conf['group_dn'], ldap.SCOPE_SUBTREE, "cn=*", ['cn', 'memberUid', 'member'])
+    ldap_groups = con.search_s(ldap_conf['group_dn'], ldap.SCOPE_SUBTREE, ldap_group_filter, ['cn', 'memberUid', 'member'])
     groups = {}
 
     for g in ldap_groups:
