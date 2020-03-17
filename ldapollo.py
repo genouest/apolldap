@@ -15,6 +15,7 @@ wa = ApolloInstance(os.environ['APOLLO_URL'], os.environ['APOLLO_ADMIN'], os.env
 admin_users = [os.environ['APOLLO_ADMIN']]
 
 fake_email = os.environ['FAKE_EMAIL']
+use_fake_email = fake_email and fake_email.startswith('@')
 
 ldap_conf = {
     'url': os.environ['LDAP_URL'],
@@ -71,7 +72,7 @@ def ldap_get_users(restrict=None):
     users = {}
     for u in ldap_users:
         # If user is not in apollo, ignore it
-        if fake_email and fake_email.startswith('@'):
+        if use_fake_email:
             ldap_name = u[1]['uid'][0].decode("utf-8") + fake_email
             ldap_mail = ldap_name
         else:
@@ -93,14 +94,14 @@ def ldap_get_groups(user_list):
         if 'memberUid' in g[1]:
             for member in g[1]['memberUid']:
                 member = member.decode("utf-8")
-                if member in user_list:
+                if member in user_list or (use_fake_email and member + fake_email in user_list):
                     members.append(user_list[member]['mail'])
         if 'member' in g[1]:
             for member in g[1]['member']:
                 uid_search = re.search('(?<=uid=)([^,]+)', member.decode("utf-8"))
                 if uid_search:
                     uid = uid_search.group(1)
-                    if uid in user_list:
+                    if uid in user_list or (use_fake_email and uid + fake_email in user_list):
                         members.append(user_list[uid]['mail'])
         groups[g[1]['cn'][0].decode("utf-8")] = members
 
