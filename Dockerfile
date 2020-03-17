@@ -33,4 +33,4 @@ ENV LDAP_ENABLED=1 \
     LDAP_USER_FILTER="(mail=*)" \
     LDAP_GROUP_FILTER="(cn=*)"
 
-CMD watch -n $REPEAT_TIMER python3 /var/scripts/ldapollo.py
+CMD sleep 600 && watch -n $REPEAT_TIMER python3 /var/scripts/ldapollo.py
