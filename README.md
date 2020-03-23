@@ -22,4 +22,5 @@ CREATE_USERS=1                              # Set this to 0 if you don't want al
 FAKE_EMAIL=""                               # If you want users to be registered with a fake email rather than the mail in ldap, write the suffix to use (e.g.: "@example.org")
 LDAP_USER_FILTER="(mail=*)"                 # LDAP filter string for retrieving user list
 LDAP_GROUP_FILTER="(cn=*)"                  # LDAP filter string for retrieving group list
+DEFAULT_GROUP=""                            # Optionnaly, an additional default group assigned to all users
 ```

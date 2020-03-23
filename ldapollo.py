@@ -17,6 +17,8 @@ admin_users = [os.environ['APOLLO_ADMIN']]
 fake_email = os.environ['FAKE_EMAIL']
 use_fake_email = fake_email and fake_email.startswith('@')
 
+default_group = os.environ['DEFAULT_GROUP']
+
 ldap_user_filter = '(mail=*)'
 if 'LDAP_USER_FILTER' in os.environ and os.environ['LDAP_USER_FILTER']:
     ldap_user_filter = os.environ['LDAP_USER_FILTER']
@@ -49,7 +51,7 @@ def apollo_get_groups():
     return group_list
 
 
-def apollo_create_groups(groups_name_list, apollo_existing_groups):
+def apollo_create_groups(groups_name_list):
     if groups_name_list:
         group_list = ','.join(groups_name_list)
         print("Creating groups '%s'" % group_list)
@@ -185,6 +187,9 @@ def main():
         ldap_users = ldap_get_users()
         ldap_groups = ldap_get_groups(ldap_users)
 
+        if default_group and ldap_groups:
+            ldap_groups[default_group] = filter_users([], ldap_users)
+
         missing_apollo_users = filter_users(apollo_users, ldap_users)
         apollo_create_users(missing_apollo_users)
     else:
@@ -193,9 +198,12 @@ def main():
         apollo_and_ldap_users = ldap_get_users(apollo_users)
         ldap_groups = ldap_get_groups(apollo_and_ldap_users)
 
+        if default_group and ldap_groups:
+            ldap_groups[default_group] = filter_users([], apollo_and_ldap_users)
+
     # Create missing groups
     missing_apollo_groups = filter_groups(apollo_groups, ldap_groups)
-    new_groups = apollo_create_groups(missing_apollo_groups, apollo_groups)
+    new_groups = apollo_create_groups(missing_apollo_groups)
     for ng in new_groups:
         apollo_groups[ng] = new_groups[ng]
 
