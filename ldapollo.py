@@ -188,7 +188,8 @@ def main():
         ldap_groups = ldap_get_groups(ldap_users)
 
         if default_group and ldap_groups:
-            ldap_groups[default_group] = filter_users([], ldap_users)
+            all_users = filter_users([], ldap_users)
+            ldap_groups[default_group] = [all_users[x]['mail'] for x in all_users]
 
         missing_apollo_users = filter_users(apollo_users, ldap_users)
         apollo_create_users(missing_apollo_users)
@@ -199,7 +200,8 @@ def main():
         ldap_groups = ldap_get_groups(apollo_and_ldap_users)
 
         if default_group and ldap_groups:
-            ldap_groups[default_group] = filter_users([], apollo_and_ldap_users)
+            all_users = filter_users([], apollo_and_ldap_users)
+            ldap_groups[default_group] = [all_users[x]['mail'] for x in all_users]
 
     # Create missing groups
     missing_apollo_groups = filter_groups(apollo_groups, ldap_groups)
