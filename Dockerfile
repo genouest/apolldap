@@ -5,8 +5,8 @@ COPY requirements.txt /tmp/requirements.txt
 
 RUN apk add --no-cache \
     python3 \
-    bash \
     nano \
+    bash \
     ca-certificates \
     wget man man-pages libldap && \
     python3 -m ensurepip && \
