@@ -37,9 +37,9 @@ ldap_conf = {
 
 def apollo_get_users():
     users = wa.users.get_users()
-    users_mail = []
+    users_mail = {}
     for user in users:
-        users_mail.append(user['lastName'])
+        users_mail[user['lastName']] = {'mail': user['username']}
     return users_mail
 
 
@@ -74,6 +74,14 @@ def apollo_create_users(users_name_list):
         print("Creating user '%s'" % (users_name_list[user]['apollo_name']))
         random_pass = ''.join(random.choice(string.ascii_lowercase) for x in range(32))
         wa.users.create_user(email=users_name_list[user]['mail'], first_name="REMOTE_USER", last_name=users_name_list[user]['apollo_name'], role="user", metadata={"INTERNAL_PASSWORD": random_pass}, password=random_pass)
+
+
+def apollo_update_user_emails(apollo_users, ldap_users):
+    for ldap_user in ldap_users:
+        if ldap_user in apollo_users and ldap_users[ldap_user]['mail'] != apollo_users[ldap_user]['mail']:
+
+            print("Updating email for user '%s' from '%s' to '%s'" % (ldap_users[ldap_user]['apollo_name'], apollo_users[ldap_user]['mail'], ldap_users[ldap_user]['mail']))
+            wa.users.update_user(email=apollo_users[ldap_user]['mail'], first_name="REMOTE_USER", last_name=ldap_users[ldap_user]['apollo_name'], new_email=ldap_users[ldap_user]['mail'])
 
 
 def ldap_get_users(restrict=None):
@@ -193,6 +201,9 @@ def main():
 
         missing_apollo_users = filter_users(apollo_users, ldap_users)
         apollo_create_users(missing_apollo_users)
+
+        if not use_fake_email:
+            apollo_update_user_emails(apollo_users, ldap_users)
     else:
         # Only sync users already existing in Apollo
         print("Will NOT create missing Apollo users")
