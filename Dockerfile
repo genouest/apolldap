@@ -1,4 +1,4 @@
-FROM alpine:3.8
+FROM alpine:3.16
 MAINTAINER Mateo Boudet <mateo.boudet@irisa.fr>
 
 COPY requirements.txt /tmp/requirements.txt
@@ -8,7 +8,8 @@ RUN apk add --no-cache \
     nano \
     bash \
     ca-certificates \
-    wget man man-pages libldap && \
+    py3-numpy \
+    wget libldap && \
     python3 -m ensurepip && \
     rm -r /usr/lib/python*/ensurepip && \
     pip3 install --upgrade pip setuptools && \
