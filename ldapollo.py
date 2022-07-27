@@ -10,6 +10,7 @@ import time
 from apollo import ApolloInstance
 
 import ldap
+from ldap.controls import SimplePagedResultsControl
 
 wa = ApolloInstance(os.environ['APOLLO_URL'], os.environ['APOLLO_ADMIN'], os.environ['APOLLO_PASSWORD'])
 admin_users = [os.environ['APOLLO_ADMIN']]
@@ -87,7 +88,26 @@ def apollo_update_user_emails(apollo_users, ldap_users):
 def ldap_get_users(restrict=None):
     con = ldap.initialize(ldap_conf['url'])
     con.simple_bind_s()
-    ldap_users = con.search_s(ldap_conf['people_dn'], ldap.SCOPE_SUBTREE, ldap_user_filter, ['uid', 'mail', 'cn'])
+    page_size = 200
+    page_control = SimplePagedResultsControl(criticality=True, size=page_size, cookie='')
+    response = con.search_ext(ldap_conf['people_dn'], ldap.SCOPE_SUBTREE, ldap_user_filter, ['uid', 'mail', 'cn'], serverctrls=[page_control])
+    pages = 0
+    ldap_users = []
+    while True:
+        pages += 1
+        print("Fetching page %s from ldap" % pages)
+        rtype, rdata, rmsgid, serverctrls = con.result3(response)
+        print("Fetched %s users from ldap (total: %s)" % (len(rdata), len(ldap_users)))
+        ldap_users.extend(rdata)
+        controls = [control for control in serverctrls if control.controlType == SimplePagedResultsControl.controlType]
+        if not controls:
+            print('The server ignores RFC 2696 control')
+            break
+        if not controls[0].cookie:
+            break
+        page_control.cookie = controls[0].cookie
+        response = con.search_ext(ldap_conf['people_dn'], ldap.SCOPE_SUBTREE, ldap_user_filter, ['uid', 'mail', 'cn'], serverctrls=[page_control])
+
     users = {}
     for u in ldap_users:
         # If user is not in apollo, ignore it
